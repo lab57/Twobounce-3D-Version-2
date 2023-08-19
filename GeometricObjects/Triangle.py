@@ -67,7 +67,7 @@ class Pixel:
     def getColor(self):
         green = (0, 255, 0)
         red = (255, 0, 0)
-        grey = (25, 25, 25)
+        grey = (150, 150, 150)
         if(self.status == 0):
             return grey
         elif(self.status == 1):

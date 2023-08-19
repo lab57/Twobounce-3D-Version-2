@@ -12,37 +12,40 @@ import random as r
 from math import sin, cos
 from Plotting import *
 from Export import *
-
-from numba import jit, njit
+import time
+#from numba import jit, njit
 
 N = 100000
 
-@jit
 def twobounce():
     loader: ObjLoader = ObjLoader("./")
-    objects, triangles = loader.load("2bounce_test_geo.obj")
+    objects, triangles = loader.load("2bounce_test_geo2.obj")
     R = loader.buildTree(triangles)
 
 
 
     vector_sets = PencilSource(Vector(5, 0, -1), Vector(5, 0, 1)).getEmissionRays(N)
-    detector    = DiskDetector(1, Vector(-5, 0, 0), Vector(-1, 0, 0), n=100)
+    detector    = DiskDetector(1, Vector(-5, 0, 0), Vector(-1, 0, 0), n=20)
 
     print("Performing one bounce")
+    t0 = time.perf_counter()
     vis_to_source: list[Hit] = [] #Onebounce hits from source
     for core in vector_sets:
         for vectors in core:
             res:Hit = R.checkIntersections(*vectors)
-            if(res.didHit):
+            if(res.didHit   ):
                 vis_to_source.append(res)
                 res.getPixel().status = 1
+    print(f"Done, {t0 - time.perf_counter()}s elapsed")
     print("Performing twobounce")
+
+    t1 = time.perf_counter()
     vis_to_detector = []
     for i,hit in enumerate(vis_to_source):
         if(detector.isVisible(R, hit.cartesian())):
             hit.getPixel().status = 2
             vis_to_detector.append(hit)
-
+    print(f"Done, {t1-time.perf_counter()}s elapsed")
     print("v2s:", len(vis_to_source))
     print("v2d:", len(vis_to_detector))
     #for obj in objects:
@@ -59,7 +62,7 @@ def twobounce():
     # print(h1.getPixel().status)
 
 
-    main("2bounce_test_geo", objects)
+    main("2bounce_test_geo2", objects)
 
     
 
