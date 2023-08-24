@@ -8,6 +8,8 @@ const int GREEN[3] = {0, 255, 0};
 
 const int GREY[3] = {125, 125, 125};
 
+const int RESOLUTION = 100;
+
 class Pixel
 {
 public:
@@ -41,10 +43,11 @@ public:
 class TriObject
 {
 public:
-    int resolution;
     string name;
     vector<Triangle> triangles;
-    Pixel[][] texture;
+    Pixel texture[RESOLUTION][RESOLUTION];
+
+    TriObject(name, )
 };
 
 int main()
