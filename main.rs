@@ -18,9 +18,13 @@ struct Scene {
 }
 
 impl Scene {
-    fn addEntry(self, children: Vec<child>, parents: Vec<parent>) {
-        self.chil
-
-        return
+    fn addEntry(mut self, children: Vec<child>, parent: parent) {
+        let p_idx = self.parents.len();
+        let c_idx = self.children.len();
+        self.parents.push(parent);
+        for c in children {
+            
+        }
+        return;
     }
 }

@@ -2,14 +2,14 @@ use std::fmt;
 use std::ops::Div;
 use std::ops::{Add, Mul, Sub};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Vector {
     pub x: f32,
     pub y: f32,
     pub z: f32,
     //v: Vec<f32>, //vector form of Vector
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Vector2 {
     pub x: f32,
     pub y: f32,
