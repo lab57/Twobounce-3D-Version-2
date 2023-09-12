@@ -19,7 +19,7 @@ N = 100000
 
 def twobounce():
     loader: ObjLoader = ObjLoader("./")
-    objects, triangles = loader.load("2bounce_test_geo2.obj")
+    objects, triangles = loader.load("CUBE_TST.obj")
     R = loader.buildTree(triangles)
 
 

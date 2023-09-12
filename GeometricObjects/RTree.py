@@ -63,6 +63,7 @@ class RTree:
         if len(triangles) <= max_triangles_per_leaf:
             min_point, max_point = self.compute_bounds(triangles)
             bounding_box = BoundingBox(min_point, max_point)
+            print("new node!")
             return RTreeNode(bounding_box, triangles=triangles)
 
         # Choose an axis to split along

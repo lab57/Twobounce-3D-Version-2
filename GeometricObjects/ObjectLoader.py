@@ -26,7 +26,7 @@ class ObjLoader:
                     name = line.split(" ")[1].strip("\n")
                     args = name.split("-")
 
-                    # print(f"Loading {name}")
+                    print(f"Loading {name}")
                     curObject = TriObject(name, [], []) #"crit" in args)
 
                     if("skip" in args):
@@ -82,6 +82,6 @@ class ObjLoader:
 
     def buildTree(self, triangles):
         print("Building R-Tree")
-        rtree = RTree(triangles, 50)
+        rtree = RTree(triangles, 8)
         print("Done")
         return rtree

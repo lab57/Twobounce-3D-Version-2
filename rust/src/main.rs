@@ -1,48 +1,78 @@
 mod ObjectLoader;
+mod diskdetector;
+mod export;
+mod pencilsource;
+mod rtree;
 mod triangle;
 mod vector;
+use crate::export::*;
+use crate::rtree::RTree;
 use crate::triangle::TriObject;
+use crate::triangle::*;
+use crate::{diskdetector::DiskDetector, pencilsource::*};
+use std::env;
 use std::rc::Rc;
 use triangle::Triangle;
 use vector::{Vector, Vector2};
-use ObjectLoader::loadObjects;
+use ObjectLoader::load_obj;
 fn main() {
-    let v1 = Vector {
-        x: 1.0,
-        y: 0.0,
-        z: 0.0,
-    };
-    let v2 = Vector {
-        x: -1.0,
-        y: 0.0,
-        z: 0.0,
-    };
-    let v3 = Vector {
-        x: 0.0,
-        y: 1.0,
-        z: 0.0,
-    };
+    env::set_var("RUST_BACKTRACE", "1");
+    let (tris, objs) = load_obj("../", "CUBE_TST.obj");
+    let r: Vec<Rc<Triangle>>;
 
-    let vt1 = Vector2 { x: 1.0, y: 0.0 };
-    let vt2 = Vector2 { x: 0.0, y: 1.0 };
-    let vt3 = Vector2 { x: 0.5, y: 0.5 };
+    let rtree = RTree::new(tris, 8);
 
-    let normal = Vector {
-        x: 0.0,
+    println!("Performing one bounce");
+    let st = Vector {
+        x: 5.0,
+        y: 0.0,
+        z: -1.0,
+    };
+    let end = Vector {
+        x: 5.0,
         y: 0.0,
         z: 1.0,
     };
-
-    let obj = TriObject::new("test".to_string(), 100, false);
-    let mut obj_rc = Rc::new(obj);
-    let tri = Triangle {
-        coords: [v1, v2, v3],
-        texture: [vt1, vt2, vt3],
-        normal: normal,
-        object: obj_rc,
+    let pencil = PencilSource {
+        start: st,
+        end: end,
     };
-    println!("functional!");
-    println!("{:?}", tri.object);
 
-    loadObjects("../../CUBE_TST.obj")
+    let norm = Vector::new(-1.0, 0.0, 0.0);
+    let det = DiskDetector::new(
+        5.0,
+        Vector {
+            x: 10.0,
+            y: 0.0,
+            z: 0.0,
+        },
+        norm,
+        15,
+    );
+
+    let vector_sets = pencil.get_emission_rays(1000, 6);
+
+    let mut vis_to_source: Vec<Hit> = Vec::new();
+
+    for core in vector_sets {
+        for vector in core {
+            let res = rtree.check_intersections(vector.0, vector.1);
+            match res {
+                Some(res) => {
+                    let (x, y) = res.get_pixel();
+                    res.obj.getPixel(x, y);
+                    res.obj.setPixel(x, y);
+                    println!("ouch");
+                    println!("x:{}, y:{}", x, y);
+                    println!("{}", res.obj.name);
+                    vis_to_source.push(res);
+                }
+                None => {}
+            }
+        }
+    }
+    println!("Completed one bounce");
+    println!("{:?}", objs[0].texture);
+
+    export("../CUBE_TST", objs);
 }

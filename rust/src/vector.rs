@@ -1,6 +1,6 @@
 use std::fmt;
 use std::ops::Div;
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Index, Mul, Sub};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vector {
@@ -25,6 +25,9 @@ impl Mul<f32> for Vector2 {
 }
 
 impl Vector {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        return Vector { x, y, z };
+    }
     pub fn norm(&self) -> Vector {
         *self / self.abs()
     }
@@ -56,6 +59,9 @@ impl Vector {
         return *self * angle.cos()
             + axis.cross(*self) * angle.sin()
             + axis * (axis.dot(*self) * (1.0 - angle.cos()));
+    }
+    pub fn getArr(&self) -> [f32; 3] {
+        return [self.x, self.y, self.z];
     }
 }
 impl Div<f32> for Vector {
