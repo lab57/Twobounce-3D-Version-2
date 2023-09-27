@@ -63,6 +63,11 @@ impl Vector {
     pub fn getArr(&self) -> [f32; 3] {
         return [self.x, self.y, self.z];
     }
+    pub fn angle_with(&self, other: Vector) -> f32 {
+        let dot_product = self.dot(other);
+        let magnitudes = self.abs() * other.abs();
+        (dot_product / magnitudes).acos()
+    }
 }
 impl Div<f32> for Vector {
     type Output = Vector;

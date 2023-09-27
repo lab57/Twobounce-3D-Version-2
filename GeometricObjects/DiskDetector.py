@@ -13,6 +13,7 @@ class DiskDetector:
         self.center = center
         self.normal = normal
         self.surfacePoints: list[Vector] = self.getSurfacePoints(n)
+        print(f"Detector points {self.surfacePoints}")
 
     def getRotationAxisAndAngle(self, initial_normal: Vector, target_normal:Vector):
         """Compute the rotation axis and angle to align initial_normal with target_normal."""

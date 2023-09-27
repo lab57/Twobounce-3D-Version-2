@@ -7,10 +7,10 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use std::rc::Rc;
 
-pub fn load_obj(path: &str, filename: &str) -> (Vec<Rc<Triangle>>, Vec<Rc<TriObject>>) {
+pub fn load_obj(path: &str, filename: &str) -> (Vec<Rc<Triangle>>, Vec<TriObject>) {
     let mut vertices = Vec::new();
-    let mut objects: Vec<Rc<TriObject>> = Vec::new();
-    let mut triangles = Vec::new();
+    let mut objects: Vec<TriObject> = Vec::new();
+    let mut triangles: Vec<Rc<Triangle>> = Vec::new();
     let mut normals = Vec::new();
     let mut texture_vertices = Vec::new();
 
@@ -28,12 +28,15 @@ pub fn load_obj(path: &str, filename: &str) -> (Vec<Rc<Triangle>>, Vec<Rc<TriObj
     let file;
     match file_result {
         Ok(file_result) => file = file_result,
-        Err(file_result) => panic!("Error opening file"),
+        Err(file_result) => {
+            println!("Current file is {}", file_path.display());
+            panic!("Error opening file")
+        }
     }
 
     let reader = io::BufReader::new(file);
 
-    let mut current_object: Option<&Rc<TriObject>> = None;
+    let mut current_object: usize = 0;
 
     for line_res in reader.lines() {
         let line;
@@ -54,12 +57,11 @@ pub fn load_obj(path: &str, filename: &str) -> (Vec<Rc<Triangle>>, Vec<Rc<TriObj
                 //     skip: args.contains(&"skip"),
                 //     texture: Vec::new(), // Assuming a default value, adjust as needed
                 // };
-                let mut obj = TriObject::new(name.to_string(), 30, args.contains(&"skip"));
-                let obj_rc = Rc::new(obj);
-                if !obj_rc.skip {
-                    objects.push(obj_rc);
-                }
-                current_object = objects.last() //Some(obj_rc); //Some(Rc::new(obj));
+                let mut obj = TriObject::new(name.to_string(), 120, args.contains(&"skip"));
+                //let obj_rc = Rc::new(obj);
+                if !obj.skip {}
+                objects.push(obj);
+                current_object = objects.len() - 1 //Some(obj_rc); //Some(Rc::new(obj));
             }
             Some(&"v") if tokens.len() > 3 => {
                 let vertex = Vector {
@@ -86,33 +88,31 @@ pub fn load_obj(path: &str, filename: &str) -> (Vec<Rc<Triangle>>, Vec<Rc<TriObj
                 });
             }
             Some(&"f") => {
-                if let Some(obj) = &current_object {
-                    if !obj.skip && tokens.len() > 3 {
-                        let parse_face = |s: &str| -> (usize, usize, usize) {
-                            let parts: Vec<usize> = s
-                                .split('/')
-                                .map(|part| part.parse().unwrap_or(1) - 1)
-                                .collect();
-                            (parts[0], parts[1], parts[2])
-                        };
+                if !objects[current_object].skip && tokens.len() > 3 {
+                    let parse_face = |s: &str| -> (usize, usize, usize) {
+                        let parts: Vec<usize> = s
+                            .split('/')
+                            .map(|part| part.parse().unwrap_or(1) - 1)
+                            .collect();
+                        (parts[0], parts[1], parts[2])
+                    };
 
-                        let (v1, vt1, vn1) = parse_face(tokens[1]);
-                        let (v2, vt2, vn2) = parse_face(tokens[2]);
-                        let (v3, vt3, vn3) = parse_face(tokens[3]);
+                    let (v1, vt1, vn1) = parse_face(tokens[1]);
+                    let (v2, vt2, vn2) = parse_face(tokens[2]);
+                    let (v3, vt3, vn3) = parse_face(tokens[3]);
 
-                        let mut triangle = Triangle {
-                            coords: [vertices[v1], vertices[v2], vertices[v3]],
-                            texture: [
-                                texture_vertices[vt1],
-                                texture_vertices[vt2],
-                                texture_vertices[vt3],
-                            ],
-                            normal: normals[vn1],
-                            object: Rc::clone(obj),
-                        };
+                    let mut triangle = Triangle {
+                        coords: [vertices[v1], vertices[v2], vertices[v3]],
+                        texture: [
+                            texture_vertices[vt1],
+                            texture_vertices[vt2],
+                            texture_vertices[vt3],
+                        ],
+                        normal: normals[vn1],
+                        object: current_object,
+                    };
 
-                        triangles.push(Rc::new(triangle));
-                    }
+                    triangles.push(Rc::new(triangle));
                 }
             }
             _ => {}

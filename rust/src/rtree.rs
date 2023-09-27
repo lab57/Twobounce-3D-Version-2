@@ -1,11 +1,53 @@
 //use crate::triangle::{intersect, Hit, Triangle};
-
-use crate::triangle::{intersect, Hit, Triangle};
+use crate::conesource::*;
+use crate::diskdetector::*;
+use crate::pencilsource::*;
+use crate::pointsource::*;
+use crate::triangle::*;
 use crate::vector::{Vector, Vector2};
 use crate::ObjectLoader::load_obj;
 use std::f32;
 use std::rc::Rc;
+fn intersect(tri: Rc<Triangle>, ray_start: Vector, ray_vec: Vector) -> Option<Hit> {
+    let eps = 0.000001;
+    // ... (implement the intersection logic)
+    let edge1 = tri.coords[1] - tri.coords[0];
+    let edge2 = tri.coords[2] - tri.coords[0];
 
+    let pvec = ray_vec.cross(edge2);
+    let det = edge1.dot(pvec);
+
+    if (det.abs() < eps) {
+        return None;
+    }
+    let inv_det = 1.0 / det;
+    let tvec = ray_start - tri.coords[0];
+    let u = tvec.dot(pvec) * inv_det;
+    if u < 0.0 || u > 1.0 {
+        return None;
+    }
+
+    let qvec = tvec.cross(edge1);
+    let v = ray_vec.dot(qvec) * inv_det;
+    if v < 0.0 || u + v > 1.0 {
+        return None;
+    }
+
+    let t = edge2.dot(qvec) * inv_det;
+    if t < eps {
+        return None;
+    }
+
+    return Some(Hit {
+        tri: Rc::clone(&tri),
+        obj: tri.object,
+        u,
+        v,
+        t,
+        origin: ray_start,
+        dir: ray_vec,
+    });
+}
 #[derive(Clone, Debug)]
 struct BoundingBox {
     min_point: Vector,
@@ -47,12 +89,23 @@ struct RTreeNode {
 pub struct RTree {
     root: Option<RTreeNode>,
     triangles: Vec<Rc<Triangle>>,
+    pub objs: Vec<TriObject>,
 }
-
+//RTree functions
 impl RTree {
-    pub fn new(triangles: Vec<Rc<Triangle>>, max_triangles_per_leaf: usize) -> Self {
+    pub fn new(
+        triangles: Vec<Rc<Triangle>>,
+        objs: Vec<TriObject>,
+        max_triangles_per_leaf: usize,
+    ) -> Self {
+        println!("Building R-Tree");
         let root = Self::build_tree(&triangles, max_triangles_per_leaf);
-        RTree { root, triangles }
+        println!("R-Tree Built");
+        RTree {
+            root,
+            triangles,
+            objs,
+        }
     }
 
     fn build_tree(triangles: &[Rc<Triangle>], max_triangles_per_leaf: usize) -> Option<RTreeNode> {
@@ -212,20 +265,115 @@ impl RTree {
             node.triangles.clone()
         }
     }
-
     pub fn check_intersections(&self, st: Vector, dir: Vector) -> Option<Hit> {
         let mut min_t = f32::INFINITY;
         let mut best_hit: Option<Hit> = None;
         let triangles = self.query_ray(st, dir);
         for tri in triangles {
-            let new_hit = intersect(&Rc::clone(&tri), st, dir);
-            if let Some(hit) = new_hit {
-                if hit.t < min_t {
-                    min_t = hit.t;
-                    best_hit = Some(hit);
+            let new_hit = intersect(tri, st, dir);
+            match new_hit {
+                Some(hit) => {
+                    if hit.t < min_t {
+                        println!("Hit {}", self.objs[hit.obj].name);
+                        min_t = hit.t;
+                        best_hit = Some(hit);
+                    }
                 }
+                _ => {}
             }
         }
         best_hit
+    }
+}
+
+impl RTree {
+    pub fn get_pixel(&self, hit: &Hit) -> (usize, usize) {
+        let res = self.objs[hit.obj].resolution;
+        let hit_pt: [f32; 3] = [1.0 - hit.u - hit.v, hit.u, hit.v];
+        let texture_loc: Vector2 = hit.tri.texture[0] * hit_pt[0]
+            + hit.tri.texture[1] * hit_pt[1]
+            + hit.tri.texture[2] * hit_pt[2];
+
+        let loc = (
+            ((res as f32 * (1.0 - texture_loc.y)) as i32),
+            ((res as f32 * texture_loc.x) as i32),
+        );
+        // println!("Getting pixel, {} {}", loc.1, loc.0);
+        // println!("{:?}", texture_loc);
+        // println!("{:?}", loc);
+        // println!("{}", self.obj.resolution as f32 * texture_loc.y);
+        // println!("{}", (self.obj.resolution as f32 * texture_loc.y) as i32);\
+
+        return (loc.1 as usize, loc.0 as usize);
+        //return self.obj.texture[loc.1 as usize][loc.0 as usize];
+    }
+
+    pub fn set_pixel(&mut self, hit: &Hit, status: u8) {
+        let (x, y) = self.get_pixel(&hit);
+        self.objs[hit.obj].texture[x][y] = status;
+    }
+    pub fn twobounce_debug(
+        &mut self,
+        n: usize,
+        ncores: i32,
+        det: DiskDetector,
+        st: Vector,
+        dir: Vector,
+    ) {
+        let mut vis_to_source: Vec<Hit> = Vec::new();
+        println!("Beginning twobounce");
+        println!("Starting source visiblity check");
+        let hit = self.check_intersections(st, dir);
+        match hit {
+            Some(hit) => {
+                self.set_pixel(&hit, 1);
+                vis_to_source.push(hit);
+                println!("Hit!");
+            }
+            None => {} //hit missed
+        }
+
+        println!("Completed source visibility check");
+        println!("Starting detector visibility check");
+
+        let mut vis_to_det: Vec<Hit> = Vec::new();
+        for hit in vis_to_source {
+            if det.is_visible(self, hit.cartesian()) {
+                println!("Second bounce hit");
+                self.set_pixel(&hit, 2);
+                vis_to_det.push(hit);
+            }
+        }
+        println!("Completed second bounce")
+    }
+
+    pub fn twobounce(&mut self, n: usize, ncores: i32, det: DiskDetector, source: PencilSource) {
+        let vector_sets = source.get_emission_rays(n, 6);
+        let mut vis_to_source: Vec<Hit> = Vec::new();
+        println!("Beginning twobounce");
+        println!("Starting source visiblity check");
+        for core in vector_sets {
+            for vector in core {
+                let hit = self.check_intersections(vector.0, vector.1);
+                match hit {
+                    Some(hit) => {
+                        self.set_pixel(&hit, 1);
+                        vis_to_source.push(hit);
+                    }
+                    None => {} //hit missed
+                }
+            }
+        }
+        println!("Completed source visibility check");
+        println!("Starting detector visibility check");
+
+        let mut vis_to_det: Vec<Hit> = Vec::new();
+        for hit in vis_to_source {
+            if det.is_visible(self, hit.cartesian()) {
+                self.set_pixel(&hit, 2);
+                vis_to_det.push(hit);
+            }
+        }
+        println!("Completed second bounce")
     }
 }

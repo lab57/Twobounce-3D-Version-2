@@ -1,11 +1,16 @@
 mod ObjectLoader;
+mod conesource;
 mod diskdetector;
 mod export;
 mod pencilsource;
+mod pointsource;
 mod rtree;
+mod scene;
 mod triangle;
 mod vector;
+use crate::conesource::*;
 use crate::export::*;
+use crate::pointsource::*;
 use crate::rtree::RTree;
 use crate::triangle::TriObject;
 use crate::triangle::*;
@@ -15,14 +20,23 @@ use std::rc::Rc;
 use triangle::Triangle;
 use vector::{Vector, Vector2};
 use ObjectLoader::load_obj;
+
+// fn main() {
+//     let v = Vector::new(1.1, 2.2, 3.0);
+//     let mut S = Scene::empty();
+//     println!("{:?}", S);
+//     S.tris.push(v);
+//     println!("{:?}", S);
+//     println!("{:?}", S.tris[0]);
+// }
+
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
-    let (tris, objs) = load_obj("../", "CUBE_TST.obj");
+    let (tris, objs) = load_obj("./", "2bounce_test_geo.obj");
     let r: Vec<Rc<Triangle>>;
 
-    let rtree = RTree::new(tris, 8);
+    let mut rtree = RTree::new(tris, objs, 8);
 
-    println!("Performing one bounce");
     let st = Vector {
         x: 5.0,
         y: 0.0,
@@ -33,46 +47,30 @@ fn main() {
         y: 0.0,
         z: 1.0,
     };
-    let pencil = PencilSource {
+    let src = PencilSource {
         start: st,
         end: end,
     };
-
+    let test_pt = Vector::new(3.36, -2.80, -1.614804);
     let norm = Vector::new(-1.0, 0.0, 0.0);
     let det = DiskDetector::new(
-        5.0,
+        1.0,
         Vector {
-            x: 10.0,
+            x: -5.0,
             y: 0.0,
             z: 0.0,
         },
         norm,
-        15,
+        10,
     );
 
-    let vector_sets = pencil.get_emission_rays(1000, 6);
-
-    let mut vis_to_source: Vec<Hit> = Vec::new();
-
-    for core in vector_sets {
-        for vector in core {
-            let res = rtree.check_intersections(vector.0, vector.1);
-            match res {
-                Some(res) => {
-                    let (x, y) = res.get_pixel();
-                    res.obj.getPixel(x, y);
-                    res.obj.setPixel(x, y);
-                    println!("ouch");
-                    println!("x:{}, y:{}", x, y);
-                    println!("{}", res.obj.name);
-                    vis_to_source.push(res);
-                }
-                None => {}
-            }
-        }
-    }
-    println!("Completed one bounce");
-    println!("{:?}", objs[0].texture);
-
-    export("../CUBE_TST", objs);
+    //let dir = Vector::new();
+    let r = det.is_visible(&rtree, test_pt);
+    println!("Res: {r}",);
+    println!("Detector points: {:?}", det.surface_points);
+    let st2 = Vector::new(5.0, 0.0, 0.0);
+    let r2 = rtree.twobounce_debug(0, 1, det, st2, test_pt - st2);
+    println!("res {:?}", r2);
+    //rtree.twobounce(400, 1, det, src);
+    //export("2bounce_test_geo", &rtree.objs);
 }

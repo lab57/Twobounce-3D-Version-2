@@ -22,7 +22,7 @@ impl Color {
 fn strip_material_information(lines: Vec<String>) -> Vec<String> {
     lines
         .into_iter()
-        .filter(|line| line.len() >= 6 && &line[0..6] != "mtllib" && &line[0..6] != "usemtl")
+        .filter(|line| !(line.len() >= 6 && (&line[0..6] == "mtllib" || &line[0..6] == "usemtl")))
         .collect()
 }
 
@@ -53,6 +53,7 @@ fn write_new_mtl(out_location: &str, mtl_file_name: &str, objects: &Vec<String>)
 }
 
 fn write_new_obj(out_location: &str, file_name: &str, new_file: String) -> io::Result<()> {
+    println!("Writing file {}{}", out_location, file_name);
     let path = format!("{}{}_textured.obj", out_location, file_name);
     fs::write(path, new_file)?;
     Ok(())
@@ -67,7 +68,7 @@ fn get_color(status: u8) -> (u8, u8, u8) {
     };
 }
 
-fn write_images(objects: Vec<Rc<TriObject>>) {
+fn write_images(objects: &Vec<TriObject>) {
     println!("Writing images");
     for (i, obj) in objects.iter().enumerate() {
         println!(
@@ -93,10 +94,11 @@ fn write_images(objects: Vec<Rc<TriObject>>) {
     }
 }
 
-pub fn export(filename: &str, objs: Vec<Rc<TriObject>>) {
+pub fn export(filename: &str, objs: &Vec<TriObject>) {
     let out_location = "./Textured/";
+    println!("Exporitng to {}{}", out_location, filename);
     //let filename = "ReflectionTestWithCube"; // Adjust filename as necessary
-    let mtl_file_name = format!("{}_MTL", filename);
+    let mtl_file_name = format!("{}", filename);
 
     let path = format!("{}.obj", filename);
     println!("Opening {}", path);
@@ -119,11 +121,14 @@ pub fn export(filename: &str, objs: Vec<Rc<TriObject>>) {
 
     for line in lines.iter() {
         if line.chars().next().unwrap() == 'o' {
+            println!("o");
             cur_object = line.split_whitespace().nth(1).unwrap().to_string();
             objects.push(cur_object.clone().trim().to_string());
             do_join = true;
         } else if line.chars().next().unwrap() == 's' {
-            new_file.push_str(line);
+            println!("scream");
+            new_file.push_str(line.as_str());
+            new_file.push_str("\n");
             new_file.push_str(&format!("usemtl mat_{}\n", cur_object));
             do_join = false;
         } else if line.len() >= 6 && &line[0..6] == "usemtl" {
@@ -131,6 +136,7 @@ pub fn export(filename: &str, objs: Vec<Rc<TriObject>>) {
         }
         if do_join {
             new_file.push_str(line);
+            new_file.push_str("\n");
         } else {
             do_join = true;
         }

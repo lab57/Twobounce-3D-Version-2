@@ -10,7 +10,7 @@ pub struct Triangle {
     pub coords: [Vector; 3],
     pub texture: [Vector2; 3],
     pub normal: Vector,
-    pub object: Rc<TriObject>,
+    pub object: usize,
 }
 
 impl Triangle {
@@ -32,47 +32,6 @@ impl fmt::Debug for Triangle {
             .field("Normal", &self.normal)
             .finish()
     }
-}
-
-pub fn intersect(tri: &Rc<Triangle>, ray_start: Vector, ray_vec: Vector) -> Option<Hit> {
-    let eps = 0.000001;
-    // ... (implement the intersection logic)
-    let edge1 = tri.coords[1] - tri.coords[0];
-    let edge2 = tri.coords[2] - tri.coords[0];
-
-    let pvec = ray_vec.cross(edge2);
-    let det = edge1.dot(pvec);
-
-    if (det.abs() < eps) {
-        return None;
-    }
-    let inv_det = 1.0 / det;
-    let tvec = ray_start - tri.coords[0];
-    let u = tvec.dot(pvec) * inv_det;
-    if u < 0.0 || u > 1.0 {
-        return None;
-    }
-
-    let qvec = tvec.cross(edge1);
-    let v = ray_vec.dot(qvec) * inv_det;
-    if v < 0.0 || u + v > 1.0 {
-        return None;
-    }
-
-    let t = edge2.dot(qvec) * inv_det;
-    if t < eps {
-        return None;
-    }
-
-    return Some(Hit {
-        tri: Rc::clone(tri),
-        obj: Rc::clone(&tri.object),
-        u,
-        v,
-        t,
-        origin: ray_start,
-        dir: ray_vec,
-    });
 }
 
 //#[derive(Copy, Clone, Debug)]
@@ -107,7 +66,7 @@ pub fn intersect(tri: &Rc<Triangle>, ray_start: Vector, ray_vec: Vector) -> Opti
 #[derive(Debug)]
 pub struct Hit {
     pub tri: Rc<Triangle>,
-    pub obj: Rc<TriObject>,
+    pub obj: usize,
     pub u: f32,
     pub v: f32,
     pub t: f32,
@@ -116,24 +75,24 @@ pub struct Hit {
 }
 
 impl Hit {
-    pub fn get_pixel(&self) -> (usize, usize) {
-        let hit_pt: [f32; 3] = [1.0 - self.u - self.v, self.u, self.v];
-        let texture_loc: Vector2 = self.tri.texture[0] * hit_pt[0]
-            + self.tri.texture[1] * hit_pt[1]
-            + self.tri.texture[2] * hit_pt[2];
+    // pub fn get_pixel(&self) -> (usize, usize) {
+    //     let hit_pt: [f32; 3] = [1.0 - self.u - self.v, self.u, self.v];
+    //     let texture_loc: Vector2 = self.tri.texture[0] * hit_pt[0]
+    //         + self.tri.texture[1] * hit_pt[1]
+    //         + self.tri.texture[2] * hit_pt[2];
 
-        let loc = (
-            ((self.obj.resolution as f32 * texture_loc.y) as i32),
-            ((self.obj.resolution as f32 * texture_loc.x) as i32),
-        );
-        // println!("Getting pixel, {} {}", loc.1, loc.0);
-        // println!("{:?}", texture_loc);
-        // println!("{:?}", loc);
-        // println!("{}", self.obj.resolution as f32 * texture_loc.y);
-        // println!("{}", (self.obj.resolution as f32 * texture_loc.y) as i32);
-        return (loc.1 as usize, loc.0 as usize);
-        //return self.obj.texture[loc.1 as usize][loc.0 as usize];
-    }
+    //     let loc = (
+    //         ((self.obj.resolution as f32 * texture_loc.y) as i32),
+    //         ((self.obj.resolution as f32 * texture_loc.x) as i32),
+    //     );
+    //     // println!("Getting pixel, {} {}", loc.1, loc.0);
+    //     // println!("{:?}", texture_loc);
+    //     // println!("{:?}", loc);
+    //     // println!("{}", self.obj.resolution as f32 * texture_loc.y);
+    //     // println!("{}", (self.obj.resolution as f32 * texture_loc.y) as i32);
+    //     return (loc.1 as usize, loc.0 as usize);
+    //     //return self.obj.texture[loc.1 as usize][loc.0 as usize];
+    // }
 
     pub fn cartesian(&self) -> Vector {
         return self.dir.calc_coord(self.origin, self.t);
@@ -159,7 +118,7 @@ impl TriObject {
     }
 
     pub fn setPixel(&self, x: usize, y: usize) {
-        self.texture[y][x] = 1;
+        //self.texture[y][x] = 1;
     }
 
     pub fn getPixel(&self, x: usize, y: usize) -> u8 {

@@ -51,7 +51,7 @@ impl DiskDetector {
         (rotation_axis, rotation_angle)
     }
 
-    fn get_surface_points(r: f32, center: Vector, normal: Vector, n: usize) -> Vec<Vector> {
+    pub fn get_surface_points(r: f32, center: Vector, normal: Vector, n: usize) -> Vec<Vector> {
         let mut points = Vec::new();
 
         let side_length = 2.0 * r / (n as f32).sqrt();
@@ -86,9 +86,9 @@ impl DiskDetector {
         for point in &self.surface_points {
             let dir = *point - source;
             if let Some(hit) = rtree.check_intersections(source.clone(), dir.clone()) {
-                return true;
+                return false;
             }
         }
-        false
+        true
     }
 }

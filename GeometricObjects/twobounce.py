@@ -19,13 +19,14 @@ N = 100000
 
 def twobounce():
     loader: ObjLoader = ObjLoader("./")
-    objects, triangles = loader.load("CUBE_TST.obj")
+    objects, triangles = loader.load("2bounce_test_geo2.obj")
     R = loader.buildTree(triangles)
 
 
 
     vector_sets = PencilSource(Vector(5, 0, -1), Vector(5, 0, 1)).getEmissionRays(N)
     detector    = DiskDetector(1, Vector(-5, 0, 0), Vector(-1, 0, 0), n=20)
+    print("RAHH", len(detector.surfacePoints))
 
     print("Performing one bounce")
     t0 = time.perf_counter()
