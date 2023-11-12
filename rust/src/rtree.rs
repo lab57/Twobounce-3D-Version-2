@@ -338,8 +338,27 @@ impl RTree {
 
         let mut vis_to_det: Vec<Hit> = Vec::new();
         for hit in vis_to_source {
-            if det.is_visible(self, hit.cartesian()) {
-                println!("Second bounce hit");
+            // if det.is_visible(self, hit.cartesian()) {
+            //     self.set_pixel(&hit, 2);
+            //     vis_to_det.push(hit);
+            // }
+            let norm = hit.tri.normal;
+            let cart = hit.cartesian();
+
+            let mut sawDet = false;
+            for point in &det.surface_points {
+                let source = cart + norm * 0.0000001;
+                let dir = *point - source;
+                match self.check_intersections(source.clone(), dir.clone()) {
+                    Some(new) => {}
+                    _ => {
+                        sawDet = true;
+                    }
+                }
+            }
+
+            if (sawDet) {
+                //println!("Status 2");
                 self.set_pixel(&hit, 2);
                 vis_to_det.push(hit);
             }
@@ -347,7 +366,7 @@ impl RTree {
         println!("Completed second bounce")
     }
 
-    pub fn twobounce(&mut self, n: usize, ncores: i32, det: DiskDetector, source: PencilSource) {
+    pub fn twobounce(&mut self, n: usize, ncores: i32, det: DiskDetector, source: PointSource) {
         let vector_sets = source.get_emission_rays(n, 6);
         let mut vis_to_source: Vec<Hit> = Vec::new();
         println!("Beginning twobounce");
@@ -369,7 +388,27 @@ impl RTree {
 
         let mut vis_to_det: Vec<Hit> = Vec::new();
         for hit in vis_to_source {
-            if det.is_visible(self, hit.cartesian()) {
+            // if det.is_visible(self, hit.cartesian()) {
+            //     self.set_pixel(&hit, 2);
+            //     vis_to_det.push(hit);
+            // }
+            let norm = hit.tri.normal;
+            let cart = hit.cartesian();
+
+            let mut sawDet = false;
+            for point in &det.surface_points {
+                let source = cart + norm * 0.0000001;
+                let dir = *point - source;
+                match self.check_intersections(source.clone(), dir.clone()) {
+                    Some(new) => {}
+                    _ => {
+                        sawDet = true;
+                    }
+                }
+            }
+
+            if (sawDet) {
+                //println!("Status 2");
                 self.set_pixel(&hit, 2);
                 vis_to_det.push(hit);
             }

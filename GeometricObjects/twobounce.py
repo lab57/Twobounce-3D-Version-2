@@ -19,9 +19,10 @@ N = 100000
 
 def twobounce():
     loader: ObjLoader = ObjLoader("./")
-    objects, triangles = loader.load("2bounce_test_geo2.obj")
+    objects, triangles = loader.load("mollerMother.obj")
     R = loader.buildTree(triangles)
-
+    print(f"{R.nnodes} nodes" )
+    print(f"{len(triangles)} triangles")
 
 
     vector_sets = PencilSource(Vector(5, 0, -1), Vector(5, 0, 1)).getEmissionRays(N)
@@ -37,7 +38,7 @@ def twobounce():
             if(res.didHit   ):
                 vis_to_source.append(res)
                 res.getPixel().status = 1
-    print(f"Done, {t0 - time.perf_counter()}s elapsed")
+    print(f"Done, {time.perf_counter()-t0 }s elapsed")
     print("Performing twobounce")
 
     t1 = time.perf_counter()
@@ -46,7 +47,7 @@ def twobounce():
         if(detector.isVisible(R, hit.cartesian())):
             hit.getPixel().status = 2
             vis_to_detector.append(hit)
-    print(f"Done, {t1-time.perf_counter()}s elapsed")
+    print(f"Done, {time.perf_counter()-t1}s elapsed")
     print("v2s:", len(vis_to_source))
     print("v2d:", len(vis_to_detector))
     #for obj in objects:
@@ -63,7 +64,7 @@ def twobounce():
     # print(h1.getPixel().status)
 
 
-    main("2bounce_test_geo2", objects)
+    #main("2bounce_test_geo2", objects)
 
     
 

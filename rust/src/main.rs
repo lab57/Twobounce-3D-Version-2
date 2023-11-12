@@ -47,10 +47,14 @@ fn main() {
         y: 0.0,
         z: 1.0,
     };
-    let src = PencilSource {
-        start: st,
-        end: end,
+    //let src = PencilSource {
+    //start: st,
+    //end: end,
+    //};
+    let src = PointSource {
+        position: Vector::new(0.0, 0.0, 0.0),
     };
+
     let test_pt = Vector::new(3.36, -2.80, -1.614804);
     let norm = Vector::new(-1.0, 0.0, 0.0);
     let det = DiskDetector::new(
@@ -68,9 +72,9 @@ fn main() {
     let r = det.is_visible(&rtree, test_pt);
     println!("Res: {r}",);
     println!("Detector points: {:?}", det.surface_points);
-    let st2 = Vector::new(5.0, 0.0, 0.0);
-    let r2 = rtree.twobounce_debug(0, 1, det, st2, test_pt - st2);
-    println!("res {:?}", r2);
-    //rtree.twobounce(400, 1, det, src);
-    //export("2bounce_test_geo", &rtree.objs);
+    // let st2 = Vector::new(5.0, 0.0, 0.0);
+    // let r2 = rtree.twobounce_debug(0, 1, det, st2, test_pt - st2);
+    // println!("res {:?}", r2);
+    rtree.twobounce(30000, 1, det, src);
+    export("test-geo", &rtree.objs);
 }

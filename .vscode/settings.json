@@ -1,6 +1,7 @@
 {
     "rust-analyzer.linkedProjects": [
-        "./rust/Cargo.toml"
+        "./rust/Cargo.toml",
+        "./rust2/Cargo.toml"
     ],
     "files.associations": {
         "*.C": "c",

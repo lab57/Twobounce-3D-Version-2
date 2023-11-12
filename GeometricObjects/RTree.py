@@ -58,12 +58,13 @@ class RTree:
     def build_tree(self, triangles: list[Triangle], max_triangles_per_leaf):
         if len(triangles) == 0:
             return
-        self.nnodes += 1
-        print(len(triangles), max_triangles_per_leaf)
+        #self.nnodes += 1
+        #print(len(triangles), max_triangles_per_leaf)
         if len(triangles) <= max_triangles_per_leaf:
             min_point, max_point = self.compute_bounds(triangles)
             bounding_box = BoundingBox(min_point, max_point)
-            print("new node!")
+            #print("new node!")
+            self.nnodes += 1
             return RTreeNode(bounding_box, triangles=triangles)
 
         # Choose an axis to split along
